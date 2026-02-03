@@ -1,0 +1,12 @@
+services:
+  go2rtc:
+    image: alexxit/go2rtc:latest
+    ports:
+      - "1984:1984" # API
+      - "8554:8554" # RTSP
+      - "8555:8555/tcp" # WebRTC TCP
+      - "8555:8555/udp" # WebRTC UDP
+    volumes:
+      - ./go2rtc.yaml:/config/go2rtc.yaml
+      - ./sample-30s.mp4:/config/sample-30s.mp4
+    restart: unless-stopped

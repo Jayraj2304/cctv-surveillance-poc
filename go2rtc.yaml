@@ -1,0 +1,22 @@
+streams:
+  # Stream input from the sample video file using ffmpeg
+  # we use relative path assuming go2rtc is run from the go2rtc directory or we adjust path.
+  # Let's assume we run from the project root and point to the file.
+  stream1: ffmpeg:/config/sample-30s.mp4#video=h264#hardware
+  stream_0k7l61h4t:
+    - rtsp://localhost:8554/stream1
+  stream_72dfy1hr7:
+    - rtsp://localhost:8554/stream1
+
+api:
+  listen: ":1984"
+  origin: "*"
+
+rtsp:
+  listen: ":8554"
+
+webrtc:
+  listen: ":8555"
+  candidates:
+    - 10.191.177.193:8555
+    - 127.0.0.1:8555

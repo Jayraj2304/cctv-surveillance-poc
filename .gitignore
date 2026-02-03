@@ -1,0 +1,17 @@
+*.exe
+*.zip
+*.log
+
+# Allow sample video
+!sample-30s.mp4
+
+# Ignore go2rtc build artifacts
+go2rtc/go2rtc.exe
+go2rtc/go2rtc
+
+# Docker
+.docker/
+
+# User specific
+.vscode/
+.idea/
