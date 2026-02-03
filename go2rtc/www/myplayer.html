@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTSP Player</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            background: #1e1e1e;
+            color: #fff;
+            width: 300px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 10px;
+            background: #000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>RTSP/WebRTC Player</h1>
+        <div class="controls">
+            <input type="text" id="streamUrl" placeholder="Enter Stream Name or RTSP URL" value="stream1">
+            <button onclick="playStream()">Play</button>
+        </div>
+        <video id="video" autoplay controls playsinline muted></video>
+        <div class="status" id="status">Ready</div>
+    </div>
+
+    <script>
+        // WebRTC logic based on go2rtc examples
+        async function playStream() {
+            const streamInput = document.getElementById('streamUrl').value;
+            const statusEl = document.getElementById('status');
+            const videoEl = document.getElementById('video');
+
+            if (!streamInput) {
+                statusEl.textContent = "Please enter a stream name or URL";
+                return;
+            }
+
+            statusEl.textContent = "Connecting...";
+
+            try {
+                const pc = new RTCPeerConnection({
+                    iceServers: [{ urls: ['stun:stun.cloudflare.com:3478'] }]
+                });
+
+                pc.onicecandidate = ev => {
+                    if (ev.candidate) return; // Wait for completion? No, go2rtc supports trickling but simple example often just sends offer.
+                    // Actually go2rtc usually handles trickle via WS.
+                };
+
+                const stream = new MediaStream();
+                videoEl.srcObject = stream;
+
+                // Add transceivers to receive video/audio
+                pc.addTransceiver('video', { direction: 'recvonly' });
+                pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                pc.ontrack = ev => {
+                    statusEl.textContent = "Stream received";
+                    stream.addTrack(ev.track);
+                };
+
+                // Signaling via WebSocket
+                const wsUrl = `ws://localhost:1984/api/ws?src=${encodeURIComponent(streamInput)}`;
+                const ws = new WebSocket(wsUrl);
+
+                ws.onopen = async () => {
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+
+                    ws.send(JSON.stringify({
+                        type: 'webrtc/offer',
+                        value: pc.localDescription.sdp
+                    }));
+                };
+
+                ws.onmessage = msg => {
+                    const data = JSON.parse(msg.data);
+                    if (data.type === 'webrtc/answer') {
+                        pc.setRemoteDescription({ type: 'answer', sdp: data.value });
+                    } else if (data.type === 'webrtc/candidate') {
+                        pc.addIceCandidate({ candidate: data.value, sdpMid: '0' });
+                    }
+                };
+
+                ws.onerror = err => {
+                    console.error(err);
+                    statusEl.textContent = "WebSocket Error. Make sure go2rtc is running.";
+                };
+
+                // Handle candidates from PC -> WS
+                pc.onicecandidate = ev => {
+                    if (ev.candidate) {
+                        ws.send(JSON.stringify({
+                            type: 'webrtc/candidate',
+                            value: ev.candidate.candidate
+                        }));
+                    }
+                };
+
+            } catch (e) {
+                console.error(e);
+                statusEl.textContent = "Error: " + e.message;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
