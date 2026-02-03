@@ -18,7 +18,7 @@ This project demonstrates how to stream video (simulated via file) to a web brow
 1. **Clone the Repo**:
 
     ```bash
-    git clone <your-repo-url>
+    git clone https://github.com/Jayraj2304/cctv-surveillance-poc.git
     cd cctv-surveillance-poc
     ```
 

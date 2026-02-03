@@ -5,7 +5,7 @@ This guide explains how to deploy and test this RTSP/WebRTC surveillance POC on 
 ## Prerequisites
 
 1. **Docker**: Ensure Docker Desktop or Docker Engine is installed and running on the target machine.
-2. **Files**: You need to copy the entire project folder to the new system.
+2. **Git**: Installed to clone the repository.
     * `docker-compose.yml`
     * `go2rtc.yaml`
     * `index.html`
@@ -13,7 +13,13 @@ This guide explains how to deploy and test this RTSP/WebRTC surveillance POC on 
 
 ## Installation Steps
 
-1. **Copy the Folder**: Transfer the project folder to the new machine.
+1. **Clone the Repository**:
+
+    ```bash
+    git clone https://github.com/Jayraj2304/cctv-surveillance-poc.git
+    cd cctv-surveillance-poc
+    ```
+
 2. **Open Terminal**: Navigate to the folder in your terminal/command prompt.
 3. **Find the IP Address**:
     * Run `ipconfig` (Windows) or `ifconfig` (Linux/Mac) to find the Local IP address of the new machine (e.g., `192.168.1.50`).
